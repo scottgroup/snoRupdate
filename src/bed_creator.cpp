@@ -1,33 +1,48 @@
-// my_class.cpp
-#include "bed_creator.h" // header in local directory
-#include <iostream> // header in standard library
+// bed_creator.cpp
+#include "bed_creator.h"
+#include <iostream>
+#include <fstream>
 
 BedCreator::BedCreator() {}
 
 void BedCreator::addEntry(std::vector<std::string> &fields)
 {
-    this->bedRow[0] = "chr" + fields[0]; // chr
+    this->bedRow[0] = parseChr(fields[0]); // chr
     // start, need -1 for conversion to bed format
     this->bedRow[1] = std::to_string(std::stoi(fields[3]) - 1);
     this->bedRow[2] = fields[4]; // end
     this->bedRow[5] = fields[6]; // strand
 
-    // dummy
-    this->bedRow[3] = findAttribute(fields[8], this->geneName);
-    this->bedRow[4] = findAttribute(fields[8], this->geneId);
+    this->bedRow[3] = findAttribute(fields[8], this->geneId); // get the gene_id
+    this->bedRow[4] = "."; // empty score
 
     this->bedRows.push_back(this->bedRow);
     // Reinitialize the vector to default empty strings
     for(size_t i = 0; i < this->bedRow.size(); ++i)
         this->bedRow[i] = "";
-
-
-    // for(auto& field : fields)
-    // {
-    //     std::cout << field << "\t";
-    // }
-    // std::cout << std::endl;
 }
+
+std::string BedCreator::parseChr(const std::string& rawChrom)
+{
+    if(rawChrom.rfind("NC", 0) == 0)
+    {
+        int underscore = rawChrom.find("_");
+        int dotPos = rawChrom.find(".");
+        int chr = std::stoi(rawChrom.substr(underscore+1, dotPos));
+
+        if(chr == 23) { return "chrY"; }
+        else if(chr == 24) { return "chrX"; }
+        else { return "chr" + std::to_string(chr); }
+    } else if(rawChrom[0] == 'N')
+    {
+        return rawChrom;
+    } else
+    {
+        return "chr" + rawChrom;
+    }
+}
+
+
 
 std::string BedCreator::findAttribute(const std::string& attributes,
                                       const std::string& attributeName)
@@ -51,14 +66,20 @@ std::string BedCreator::findAttribute(const std::string& attributes,
     return attribute;
 }
 
-void BedCreator::saveBedToFile()
+void BedCreator::saveBedToFile(const std::string bedOutPath)
 {
+    std::ofstream outfile(bedOutPath);
+
     for(auto& vec: this->bedRows)
     {
-        for(std::string& field: vec)
+        for(std::size_t i = 0; i < vec.size(); ++i)
         {
-            std::cout << field << "\t";
+            outfile << vec[i];
+            if(i != vec.size() - 1)
+                outfile << "\t";
         }
-        std::cout << std::endl;
+        outfile << std::endl;
     }
+
+    outfile.close();
 }
