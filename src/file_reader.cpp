@@ -33,9 +33,6 @@ void FileReader::readFile(const std::string& file) {
     char _buffer[1024];
     fileStream.rdbuf()->pubsetbuf(_buffer, 16184);
     std::string line, field;
-    // Decalte functions
-    bool isSmallGene(std::vector<std::string>&);
-    bool isSnoRNAOrScaRNA(std::string&);
 
     // initiate the position in line when searching
     std::size_t found;

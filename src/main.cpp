@@ -1,7 +1,9 @@
 #include <iostream>
 
-#include "file_reader.h"
 #include "inih/INIReader.h"
+
+#include "file_reader.h"
+#include "gtf_builder.h"
 
 using namespace std;
 
@@ -16,14 +18,15 @@ int main(int argc, char *argv[])
     }
 
     // Extraction of config elements from config file
-    const string file = reader.Get("input", "gtfPath", "UNKNOWN");
+    const string gtfFile = reader.Get("input", "gtfPath", "UNKNOWN");
     const string snodbFile = reader.Get("input", "snodbFile", "UNKNOWN");
     const string source = reader.Get("properties", "source", "UNKNOWN");
     const string snoRNAGtfFile = reader.Get("intermediateFiles", "gtfExtractedSnoRNA", "UNKNOWN");
     const string missingSnoRNAFile = reader.Get("intermediateFiles", "missingSnoRNAs", "UNKNOWN");
+    const string suffix = reader.Get("output", "suffix", "UNKNOWN");
 
     // Generate the snoRNA bed file for the gtf
-    FileReader fileReader(file, snoRNAGtfFile);
+    FileReader fileReader(gtfFile, snoRNAGtfFile);
 
     // bedtools intersect
     string cmd = "bedtools intersect -wa -a " + snodbFile \
@@ -42,13 +45,13 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    // Create the new entries for the missing snoRNAs
+    GtfBuilder gtfBuilder(missingSnoRNAFile, source, suffix);
+
     // TODO:
-    //    - Create a bed from the snoDB id file, (-1 for start) and
-    //      remove box_type (will be used to generate the new gtf entries)
-    //    - add refseq or ensembl in the config file so I can create the
-    //      GtfBuilder class and separate entries for refseq and ensembl
-    //    - Get the box_type for each missing snoRNA to use for scaRNA/snoRNAs ?
-    //    - Create gene, transcript and exon for each snoRNA
+    //    - Create gene, transcript and exon for each snoRNA for RefSeq
+    //    - Append to the file for Ensembl and append, but remove the last
+    //      line for RefSeq
 
     return 0;
 }

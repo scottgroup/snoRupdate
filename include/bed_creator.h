@@ -1,5 +1,5 @@
 // bed_creator.h
-#ifndef BED_CREATOR_H // include guard
+#ifndef BED_CREATOR_H
 #define BED_CREATOR_H
 
 #include <iostream>

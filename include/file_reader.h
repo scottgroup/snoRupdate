@@ -1,5 +1,5 @@
 // file_reader.h
-#ifndef FILE_READER_H // include guard
+#ifndef FILE_READER_H
 #define FILE_READER_H
 
 #include <iostream>
