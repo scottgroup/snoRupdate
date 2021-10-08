@@ -6,8 +6,5 @@ cmake ..
 make
 echo -e 'compiling done !\n'
 
-./snoRupdate \
-    /home/danx/Documents/projects/snoDB_snoRupdate/data/ensembl.gtf \
-    /tmp/snoRupdate_annotation_snoRNAs.bed \
-    /home/danx/Documents/projects/snoDB_snoRupdate/data/snoDB_info.bed \
-    /tmp/snoRupdate_missing_snoRNAs.bed
+# Run the tool and provinding the config file path
+./snoRupdate ../config.ini

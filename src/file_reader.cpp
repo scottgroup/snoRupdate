@@ -21,7 +21,7 @@ void FileReader::validateFile(const std::string& file)
     struct stat buffer;
     if((stat(file.c_str(), &buffer) == 0) == 0)
     {
-        std::cerr << "File does not exist !" << std::endl;
+        std::cerr << "\e[31mFile does not exist !\e[39m" << std::endl;
         exit(0);
     }
 }
@@ -73,7 +73,9 @@ bool FileReader::isSmallGene(std::vector<std::string>& fields){
 
 bool FileReader::isSnoRNAOrScaRNA(std::string& attributes){
     if(attributes.find("snoRNA") != std::string::npos
-        || attributes.find("scaRNA") != std::string::npos)
+        || attributes.find("scaRNA") != std::string::npos
+        || attributes.find("guide_RNA") != std::string::npos // for refseq, some snoRNA are guide_RNA
+        || attributes.find("SNORD") != std::string::npos) // for refseq, some pseudogene are SNORDs
     {
         return true;
     }

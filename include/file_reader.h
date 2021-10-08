@@ -29,13 +29,3 @@ private:
 };
 
 #endif /* FILE_READER_H */
-
-
-// class Person {
-// public:
-//     Person(const std::string& name)
-//       : name_(name) {}
-//     const std::string& getName() const { return name_; }
-// private:
-//     const std::string name_;
-// };
