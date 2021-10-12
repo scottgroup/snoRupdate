@@ -10,10 +10,8 @@
 
 void GtfBuilder::init()
 {
-    if(this->source == "Ensembl")
-        buildEnsembl();
-    else if(this->source == "RefSeq")
-        buildRefseq();
+    if(this->source == "Ensembl" || this->source == "RefSeq")
+        buildNewEntries();
     else
     {
         std::cerr << "\e[31m'"
@@ -25,9 +23,11 @@ void GtfBuilder::init()
     }
 }
 
-void GtfBuilder::buildEnsembl()
+void GtfBuilder::buildNewEntries()
 {
-    std::cout << "buildEnsembl !" << std::endl;
+    std::cout << "build " << this->source << " !" << std::endl;
+
+    if(this->source == "RefSeq") getChrCorresp(); // Get chr correspondance
 
     std::vector< std::unordered_map<std::string, std::string> > missingEntries = this->fileReader();
     std::vector<std::string> entryTypes = {"gene", "transcript", "exon"};
@@ -49,14 +49,9 @@ void GtfBuilder::buildEnsembl()
         std::cout << line;
     }
 
-    std::cout << "buildEnsembl  Done !" << std::endl;
+    std::cout << "build " << this->source << " done !" << std::endl;
 }
 
-void GtfBuilder::buildRefseq()
-{
-    // TODO
-    std::cout << "buildRefseq !" << std::endl;
-}
 
 std::vector< std::unordered_map<std::string, std::string> > GtfBuilder::fileReader()
 {
@@ -107,7 +102,7 @@ const std::string GtfBuilder::createEntry(std::unordered_map<std::string,
                                           const std::string& feature)
 {
     std::ostringstream ss;
-    ss << missingEntry["chr"].substr(3)                          << "\t"            // chr
+    ss << getChr(missingEntry["chr"])                            << "\t"            // chr
        << "snoDB"                                                << "\t"            // source
        << feature                                                << "\t"            // feature
        << std::to_string(std::stoi(missingEntry["start"]) + 1)   << "\t"            // start +1 for gtf
@@ -115,9 +110,33 @@ const std::string GtfBuilder::createEntry(std::unordered_map<std::string,
        << "."                                                    << "\t"            // score
        << missingEntry["strand"]                                 << "\t"            // strand
        << "."                                                    << "\t"            // frame
-       << getEnsemblAttributes(missingEntry, feature)            << std::endl;      // attribues
+       << getAttributes(missingEntry, feature)                   << std::endl;      // attribues
     return ss.str();
 }
+
+const std::string GtfBuilder::getChr(const std::string& field)
+{
+    if(this->source == "Ensembl")
+        return field.substr(3);
+    else
+        return getRefseqChr(field);
+}
+
+const std::string GtfBuilder::getAttributes(std::unordered_map<std::string, std::string>& missingEntry,
+                                            const std::string& feature)
+{
+    if(this->source == "Ensembl")
+        return getEnsemblAttributes(missingEntry, feature);
+    else
+        return getRefseqAttributes(missingEntry, feature);
+}
+
+
+
+// -------------------------------------------------------------
+// ------------------------ FOR ENSEMBL ------------------------
+// -------------------------------------------------------------
+
 
 const std::string GtfBuilder::getEnsemblAttributes(std::unordered_map<std::string,
                                                    std::string>& missingEntry,
@@ -159,9 +178,102 @@ const std::string GtfBuilder::getEnsemblAttributes(std::unordered_map<std::strin
 
     return ss.str();
 
-    // Gene, transcript and exon examples
+    // Ensembl gene, transcript and exon examples
     // 21	snoDB	gene	40761744	40761818	.	+	.	gene_id "snoDB2021"; gene_version "1"; gene_name "U3"; gene_source "snoDB"; gene_biotype "snoRNA";
     // 21	snoDB	transcript	40761744	40761818	.	+	.	gene_id "snoDB2021"; gene_version "1"; transcript_id "snoDB2021-201"; transcript_version "1"; gene_name "U3"; gene_source "snoDB"; gene_biotype "snoRNA"; transcript_name "U3-201"; transcript_source "snoDB"; transcript_biotype "snoRNA"; tag "basic"; transcript_support_level "NA";
     // 21	snoDB	exon	40761744	40761818	.	+	.	gene_id "snoDB2021"; gene_version "1"; transcript_id "snoDB2021-201"; transcript_version "1"; exon_number "1"; gene_name "U3"; gene_source "snoDB"; gene_biotype "snoRNA"; transcript_name "U3-201"; transcript_source "snoDB"; transcript_biotype "snoRNA"; exon_id "snoDB2021"; exon_version "1"; tag "basic"; transcript_support_level "NA";
+
+}
+
+
+// -------------------------------------------------------------
+// ------------------------ FOR REFSEQ ------------------------
+// -------------------------------------------------------------
+
+const std::string GtfBuilder::getRefseqChr(const std::string& field) {
+    return this->chrCorresp[field];
+}
+
+std::unordered_map<std::string, std::string> GtfBuilder::getChrCorresp()
+{
+    // Initialize file stream
+    std::ifstream fileStream(this->gtfFile);
+    char _buffer[1024];
+    fileStream.rdbuf()->pubsetbuf(_buffer, 16184);
+    std::string line, field, chr;
+
+    // initiate the position in line when searching
+    std::size_t start;
+    std::size_t found;
+
+    // go through the file line by line
+    while(getline(fileStream, line))
+    {
+        if(line[0] == '#') continue;
+
+        start = 0;
+        found = 0;
+
+        found = line.find("\t", start);
+        field = line.substr(start, found - start);
+
+        // Check if regular chr
+        start = field.find("NC_");
+        if(start != std::string::npos)
+        {
+            start += 3;
+            found = field.find(".");
+            chr = "chr" + std::to_string(std::stoi(field.substr(start, found - start)));
+
+            // Deal with sex chromosome
+            if(chr == "chr23") chr = "chrY";
+            else if(chr == "chr24") chr = "chrX";
+
+            this->chrCorresp[chr] = field;
+        }
+    }
+
+    return chrCorresp;
+}
+
+const std::string GtfBuilder::getRefseqAttributes(std::unordered_map<std::string,
+                                                   std::string>& missingEntry,
+                                                   const std::string& feature)
+{
+    std::string snotype = (missingEntry["box_type"] == "scaRNA") ? "scaRNA" : "snoRNA";
+
+    std::ostringstream ss;
+    // Attribues to all
+    ss << "gene_id \"" << missingEntry["id"] << "\"; ";               // gene_id
+
+    if(feature == "gene")
+        ss  << "transcript_id \"\"; ";                                // transcript_id
+    else
+        ss << "transcript_id \"" << missingEntry["id"] << ".1\"; ";   // transcript_id
+
+    if(feature == "gene") ss << "gbkey \"Gene\"; ";                   // gbkey
+    else if(feature == "transcript") ss << "gbkey \"ncRNA\"; ";       // gbkey
+
+    if(missingEntry["name"] != "")
+        ss << "gene \"" << missingEntry["name"] << "\"; ";            // gene
+
+    if(feature == "gene")
+        ss << "gene_biotype \"" << snotype <<"\";";                   // gene_biotype
+    else
+        ss << "transcript_biotype \"" << snotype <<"\";";             // transcript_biotype
+
+
+    if(feature == "exon")
+        ss << " exon_number \"1\";";
+
+    ss << "\n";
+
+
+    return ss.str();
+
+    // Refseq gene, transcript and exon examples
+    // NC_000001.11	BestRefSeq	gene	    1304729	1304812	.	-	.	gene_id "SNORD167"; transcript_id ""; db_xref "GeneID:109623456"; db_xref "HGNC:HGNC:51881"; description "small nucleolar RNA, C/D box 167"; gbkey "Gene"; gene "SNORD167"; gene_biotype "snoRNA";
+    // NC_000001.11	BestRefSeq	transcript	1304729	1304812	.	-	.	gene_id "SNORD167"; transcript_id "NR_145806.1"; db_xref "GeneID:109623456"; gbkey "ncRNA"; gene "SNORD167"; product "small nucleolar RNA, C/D box 167"; transcript_biotype "snoRNA";
+    // NC_000001.11	BestRefSeq	exon	    1304729	1304812	.	-	.	gene_id "SNORD167"; transcript_id "NR_145806.1"; db_xref "GeneID:109623456"; gene "SNORD167"; product "small nucleolar RNA, C/D box 167"; transcript_biotype "snoRNA"; exon_number "1";
 
 }

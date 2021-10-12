@@ -46,10 +46,9 @@ int main(int argc, char *argv[])
     }
 
     // Create the new entries for the missing snoRNAs
-    GtfBuilder gtfBuilder(missingSnoRNAFile, source, suffix);
+    GtfBuilder gtfBuilder(missingSnoRNAFile, source, gtfFile, suffix);
 
     // TODO:
-    //    - Create gene, transcript and exon for each snoRNA for RefSeq
     //    - Append to the file for Ensembl and append, but remove the last
     //      line for RefSeq
 
