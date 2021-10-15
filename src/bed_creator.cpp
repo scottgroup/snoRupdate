@@ -3,7 +3,19 @@
 #include <iostream>
 #include <fstream>
 
-BedCreator::BedCreator() {}
+
+void BedCreator::setSource(const std::string source) {
+    this->source = source;
+    if(this->source != "Ensembl" && this->source != "RefSeq")
+    {
+        std::cerr << "\e[31m'"
+             << this->source
+             << "' is not a valid or supported source ! "
+             << "Valid sources are: 'Ensembl' or 'RefSeq'."
+             << "\e[39m\n";
+        exit(1);
+    }
+}
 
 void BedCreator::addEntry(std::vector<std::string> &fields)
 {
@@ -24,8 +36,17 @@ void BedCreator::addEntry(std::vector<std::string> &fields)
 
 std::string BedCreator::parseChr(const std::string& rawChrom)
 {
-    if(rawChrom.rfind("NC", 0) == 0)
+    if(rawChrom.rfind("NC_", 0) == 0)
     {
+        // Check if it is really RefSeq
+        if(this->source == "Ensembl")
+        {
+            std::cerr << "\e[31mChromosome contains RefSeq nomenclature (NC_)... "
+                          << "Maybe the 'source' in the config.ini file should be "
+                          << "Ensembl ?\n\e[39m";
+                exit(1);
+        }
+
         int underscore = rawChrom.find("_");
         int dotPos = rawChrom.find(".");
         int chr = std::stoi(rawChrom.substr(underscore+1, dotPos));

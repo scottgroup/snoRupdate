@@ -11,14 +11,16 @@
 class FileReader
 {
 public:
-    FileReader(const std::string& file, const std::string& bedOutput)
+    FileReader(const std::string& file, const std::string& bedOutput, const std::string& source)
       : gtfPath(file),
-        bedOutPath(bedOutput)
+        bedOutPath(bedOutput),
+        source(source)
         { init(); }
 
 private:
     const std::string gtfPath;
     const std::string bedOutPath;
+    const std::string source;
     BedCreator bedCreator;
 
     void init();

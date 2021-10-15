@@ -8,6 +8,10 @@
 #include "bed_creator.h" // header in local directory
 
 void FileReader::init() {
+
+    this->bedCreator.setSource(this->source);
+
+    // Make sure the path of the gtf file exists
     validateFile(this->gtfPath);
 
     readFile(this->gtfPath);
@@ -21,7 +25,10 @@ void FileReader::validateFile(const std::string& file)
     struct stat buffer;
     if((stat(file.c_str(), &buffer) == 0) == 0)
     {
-        std::cerr << "\e[31mFile does not exist !\e[39m" << std::endl;
+        std::cerr << "\e[31mFile '"
+                  << file
+                  << "' does not exist !\e[39m"
+                  << std::endl;
         exit(0);
     }
 }
@@ -30,8 +37,6 @@ void FileReader::readFile(const std::string& file) {
 
     // Declare the variables
     std::ifstream fileStream(file);
-    char _buffer[1024];
-    fileStream.rdbuf()->pubsetbuf(_buffer, 16184);
     std::string line, field;
 
     // initiate the position in line when searching

@@ -9,11 +9,14 @@
 class BedCreator
 {
 public:
-    BedCreator();
+    BedCreator() {}
+
+    void setSource(const std::string source);
     void addEntry(std::vector<std::string>&);
     void saveBedToFile(const std::string bedOutPath);
 
 private:
+    std::string source;
     const std::string geneId = "gene_id";
     std::vector< std::vector<std::string> > bedRows;
     std::vector<std::string> bedRow = std::vector<std::string>(6, "");

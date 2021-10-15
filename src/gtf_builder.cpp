@@ -10,24 +10,15 @@
 
 void GtfBuilder::init()
 {
-    if(this->source == "Ensembl" || this->source == "RefSeq")
-        buildNewEntries();
-    else
-    {
-        std::cerr << "\e[31m'"
-             << this->source
-             << "' is not a valid or supported source ! "
-             << "Valid sources are: 'Ensembl' or 'RefSeq'."
-             << "\e[39m\n";
-        exit(1);
-    }
+    buildNewEntries();
 }
 
 void GtfBuilder::buildNewEntries()
 {
-    std::cout << "build " << this->source << " !" << std::endl;
+    std::cout << "Building new entries for " << this->source << "..." << std::endl;
 
-    if(this->source == "RefSeq") getChrCorresp(); // Get chr correspondance
+    if(this->source == "RefSeq")
+        getChrCorresp(); // Get chr correspondance
 
     std::vector< std::unordered_map<std::string, std::string> > missingEntries = this->fileReader();
     std::vector<std::string> entryTypes = {"gene", "transcript", "exon"};
@@ -43,13 +34,9 @@ void GtfBuilder::buildNewEntries()
         }
     }
 
-    // Print for now, but should be added to the gtf file (concatenation) // TODO !!
-    for(const std::string& line: builtEntries)
-    {
-        std::cout << line;
-    }
+    writeNewGtf(builtEntries);
 
-    std::cout << "build " << this->source << " done !" << std::endl;
+    std::cout << "Building " << this->source << " done !" << std::endl;
 }
 
 
@@ -62,8 +49,6 @@ std::vector< std::unordered_map<std::string, std::string> > GtfBuilder::fileRead
 
     // Initialize file stream
     std::ifstream fileStream(this->missingSnoRNAFile);
-    char _buffer[1024];
-    fileStream.rdbuf()->pubsetbuf(_buffer, 16184);
     std::string line, field;
 
     // initiate the position in line when searching
@@ -90,6 +75,33 @@ std::vector< std::unordered_map<std::string, std::string> > GtfBuilder::fileRead
     }
 
     return missingEntries;
+}
+
+void GtfBuilder::writeNewGtf(std::vector<std::string> builtEntries)
+{
+    int found = this->gtfFile.find(".gtf");
+    std::string baseFileName = this->gtfFile.substr(0, found);
+    std::string NewGtfFile = baseFileName + this->suffix + ".gtf";
+
+    // Output stream
+    std::ofstream outfile(NewGtfFile);
+
+    // Read from the original file
+    std::ifstream fileStream(this->gtfFile);
+    std::string line, field;
+
+    while(getline(fileStream, line))
+    {
+        if(line.find("###") == std::string::npos)
+        {
+            outfile << line << std::endl;
+        }
+    }
+
+    for(const std::string& line: builtEntries)
+    {
+        outfile << line;
+    }
 }
 
 // =======================================================================
@@ -198,8 +210,6 @@ std::unordered_map<std::string, std::string> GtfBuilder::getChrCorresp()
 {
     // Initialize file stream
     std::ifstream fileStream(this->gtfFile);
-    char _buffer[1024];
-    fileStream.rdbuf()->pubsetbuf(_buffer, 16184);
     std::string line, field, chr;
 
     // initiate the position in line when searching
@@ -231,6 +241,15 @@ std::unordered_map<std::string, std::string> GtfBuilder::getChrCorresp()
 
             this->chrCorresp[chr] = field;
         }
+    }
+
+    // Make sure that is is really RefSeq
+    if(chrCorresp.empty())
+    {
+        std::cerr << "\e[31mProblems to find the RefSeq chromosomes..."
+                  << " Maybe the 'source' in the config.ini file should"
+                  << " be Ensembl ?\n\e[39m";
+        exit(1);
     }
 
     return chrCorresp;
@@ -265,9 +284,6 @@ const std::string GtfBuilder::getRefseqAttributes(std::unordered_map<std::string
 
     if(feature == "exon")
         ss << " exon_number \"1\";";
-
-    ss << "\n";
-
 
     return ss.str();
 

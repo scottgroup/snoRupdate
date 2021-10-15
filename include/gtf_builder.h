@@ -31,6 +31,8 @@ private:
     const std::string getChr(const std::string& field);
     const std::string getAttributes(std::unordered_map<std::string, std::string>&,
                                             const std::string& feature);
+    void writeNewGtf(std::vector<std::string> builtEntries);
+
     // Specific to Ensembl
     const std::string getEnsemblAttributes(std::unordered_map<std::string, std::string>&,
                                             const std::string& feature);
