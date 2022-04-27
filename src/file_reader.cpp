@@ -77,7 +77,8 @@ bool FileReader::isSnoRNAOrScaRNA(std::string& attributes){
     if(attributes.find("snoRNA") != std::string::npos
         || attributes.find("scaRNA") != std::string::npos
         || attributes.find("guide_RNA") != std::string::npos // for refseq, some snoRNA are guide_RNA
-        || attributes.find("SNORD") != std::string::npos) // for refseq, some pseudogene are SNORDs
+        || attributes.find("SNORD") != std::string::npos // for refseq, some pseudogene are SNORDs
+        || attributes.find("TERC") != std::string::npos) // Get TERC as it is not annotated as snoRNA in ensembl and refseq
     {
         return true;
     }
