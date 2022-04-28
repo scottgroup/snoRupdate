@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Loading the submodule inig
+git submodule init
+git submodule update
+
 # http://derekmolloy.ie/hello-world-introductions-to-cmake/
 mkdir -p build
 cd build
