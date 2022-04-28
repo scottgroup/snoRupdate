@@ -34,7 +34,10 @@ The compiled script (snoRupdate) will be in the `build` directory.
 Before running the script, you must modify the config file (config.ini) in the
 main directory. First change the `gtfPath` to the path of your gtf file. It could
 either be a absolute or a relative path. By default, you could put your gtf file
-in the `data` directory and change the gtf name to fit yours. Then, if you are
+in the `data` directory and change the gtf name to fit yours. 
+*Make sure that your gtf file is not compressed (.gtf and not .gtf.gz)
+
+Then, if you are
 using a gtf from RefSeq, change the `source` to RefSeq, and if it is from
 ensembl, leave it as is. You can change the other values to suit your needs
 if you want, but you can also leave them unchanged.
